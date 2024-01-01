@@ -62,6 +62,10 @@ impl LiveGameState {
 
         for _ in 0..ticks_elapsed {
             self.advance_tick();
+
+            if self.is_game_over() {
+                break;
+            }
         }
 
         self.last_updated = now;

@@ -67,6 +67,12 @@ fn main() {
 
     main_loop(&mut game_state, &mut random_gen);
 
-    game_state.account_for_elapsed_time();
+    if game_state.is_game_over() {
+        println!("Your pet died! Restarting...");
+        game_state = new_default_state()
+    } else {
+        game_state.account_for_elapsed_time();
+    }
+
     save_state(&game_state);
 }

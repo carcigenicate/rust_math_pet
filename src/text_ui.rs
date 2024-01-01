@@ -28,6 +28,10 @@ fn feed_routine(pet: &mut Pet, food_per_correct: f64, damage_per_wrong: f64, ran
                 break;
             }
         }
+
+        if pet.is_dead() {
+            break;
+        }
     }
 
     println!("{}", pet.format_stats());
@@ -90,9 +94,14 @@ fn menu_dispatch(game_state: &mut LiveGameState, random_gen: &mut ThreadRng) -> 
 
 pub fn main_loop(game_state: &mut LiveGameState, random_gen: &mut ThreadRng) {
     loop {
+        if game_state.is_game_over() {
+            break;
+        }
+
         game_state.account_for_elapsed_time();
 
         let keep_playing = menu_dispatch(game_state, random_gen);
+
         if keep_playing == false {
             break;
         }

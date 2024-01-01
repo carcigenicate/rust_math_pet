@@ -43,7 +43,7 @@ impl Pet {
     }
 
     pub fn is_dead(&self) -> bool {
-        return self.health == 0.0;
+        return self.health <= 0.0;
     }
 
     pub fn is_full(&self) -> bool {
