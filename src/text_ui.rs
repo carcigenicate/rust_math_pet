@@ -42,11 +42,12 @@ fn shop_routine(game_state: &mut LiveGameState) -> () {
     let inventory = shop::get_shop_inventory();
 
     loop {
+        println!("{}", game_state.format_stats());
         println!("{}", shop::format_inventory(&inventory));
 
-        match get_input("# to buy: ").parse::<u32>() {
+        match get_input("# to buy: ").parse::<usize>() {
             Ok(i) => {
-                match inventory.get(i as usize - 1) {
+                match inventory.get(i - 1) {
                     Some(item) => {
                         let bought = item.buy_and_apply(game_state);
                         if bought == false {
@@ -77,8 +78,7 @@ fn menu_dispatch(game_state: &mut LiveGameState, random_gen: &mut ThreadRng) -> 
     return match get_integer_in_range(1, 3, "Enter a menu option: ") {
         1 => {
             let LiveGameState { pet, tweaks: GameTweaks { food_per_correct, damage_per_wrong, ..}, ..} = game_state;
-            let (n_correct, _) = feed_routine(pet, *food_per_correct, *damage_per_wrong, random_gen);
-            game_state.money += n_correct;
+            feed_routine(pet, *food_per_correct, *damage_per_wrong, random_gen);
             true
         },
         2 => {

@@ -3,12 +3,12 @@ use crate::game_state::LiveGameState;
 
 pub struct ShopItem {
     pub name: String,
-    pub price: u32,
+    pub price: f64,
     pub effect: fn(&mut LiveGameState) -> (),
 }
 
 impl ShopItem {
-    pub fn new(name: impl Into<String>, price: u32, effect: fn(&mut LiveGameState) -> ()) -> Self {
+    pub fn new(name: impl Into<String>, price: f64, effect: fn(&mut LiveGameState) -> ()) -> Self {
         return Self {
             name: name.into(),
             price: price,
@@ -17,8 +17,8 @@ impl ShopItem {
     }
 
     pub fn buy_and_apply(&self, game_state: &mut LiveGameState) -> bool {
-        return if game_state.money >= self.price {
-            game_state.money -= self.price;
+        return if game_state.pet.satiation >= self.price {
+            game_state.pet.starve(self.price);
             (self.effect)(game_state);
             true
         } else {
@@ -29,10 +29,13 @@ impl ShopItem {
 
 pub fn get_shop_inventory() -> Vec<ShopItem> {
     return vec![
-        ShopItem::new("10 HP", 10, |s| s.pet.heal(10.0)),
-        ShopItem::new("10 SAT", 20, |s| s.pet.feed(20.0)),
-        ShopItem::new("Increase Max HP (+2)", 10, |s| s.pet.health_max += 2.0),
-        ShopItem::new("Increase Max SAT (+2)", 10, |s| s.pet.satiation_max += 2.0),
+        ShopItem::new("Heal 25 HP", 50.0, |s| s.pet.heal(10.0)),
+        ShopItem::new("Increase Max HP (+2)", 10.0, |s| s.pet.health_max += 2.0),
+        ShopItem::new("Increase Max SAT (+2)", 10.0, |s| s.pet.satiation_max += 2.0),
+        ShopItem::new("Increase correct answer reward (+0.25), but also increase wrong answer penalty (+0.5)", 30.0, |s| {
+            s.tweaks.food_per_correct += 0.25;
+            s.tweaks.damage_per_wrong += 0.5;
+        }),
     ];
 }
 

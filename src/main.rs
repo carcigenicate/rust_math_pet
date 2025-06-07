@@ -10,7 +10,6 @@
 use rand::thread_rng;
 use crate::game_state::{GameTweaks, LiveGameState};
 use crate::pet::Pet;
-use crate::text_ui::main_loop;
 
 mod game_state;
 mod pet;
@@ -41,8 +40,8 @@ fn new_default_state() -> LiveGameState {
     let pet = Pet::new(100.0, 100.0, 100.0, 100.0);
 
     let tweaks = GameTweaks {
-        food_per_correct: 2.0,
-        damage_per_wrong: 2.0,
+        food_per_correct: 2.5,
+        damage_per_wrong: 5.0,
 
         ms_per_tick: 500,
 
@@ -53,7 +52,6 @@ fn new_default_state() -> LiveGameState {
 
     return LiveGameState {
         pet: pet,
-        money: 0,
         tweaks: tweaks,
         last_updated: time_utils::now(),
     };
@@ -65,7 +63,7 @@ fn main() {
     let mut game_state = load_state().unwrap_or_else(new_default_state);
     let mut random_gen = thread_rng();
 
-    main_loop(&mut game_state, &mut random_gen);
+    text_ui::main_loop(&mut game_state, &mut random_gen);
 
     if game_state.is_game_over() {
         println!("Your pet died! Restarting...");

@@ -16,21 +16,12 @@ pub struct GameTweaks {
 #[derive(Serialize, Deserialize)]
 pub struct LiveGameState {
     pub pet: Pet,
-    pub money: u32,
     pub last_updated: u128,
 
     pub tweaks: GameTweaks,
-    // question_generator: ?
 }
 
 impl LiveGameState {
-    // fn new(pet: Pet, starting_money: u32) -> Self {
-    //     return Self {
-    //         pet: pet,
-    //         money: starting_money,
-    //     };
-    // }
-
     pub fn borrow_pet(&mut self) -> &mut Pet {
         return &mut self.pet;
     }
@@ -76,6 +67,6 @@ impl LiveGameState {
     }
 
     pub fn format_stats(&self) -> String {
-        return format!("Money: {}, Pet: {}", self.money, self.pet.format_stats());
+        return self.pet.format_stats();
     }
 }
