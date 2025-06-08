@@ -16,9 +16,11 @@ pub struct GameTweaks {
 #[derive(Serialize, Deserialize)]
 pub struct LiveGameState {
     pub pet: Pet,
-    pub last_updated: u128,
-
     pub tweaks: GameTweaks,
+
+    // Timestamps
+    pub last_updated: u128,
+    pub created: u128,
 }
 
 impl LiveGameState {
@@ -49,24 +51,24 @@ impl LiveGameState {
         let ms_elapsed = now - self.last_updated;
         let ticks_elapsed = ms_elapsed / self.tweaks.ms_per_tick as u128;
 
-        println!("Elapsed: {:.2} hours ({} ticks)", ms_elapsed as f64 / 1000.0 / 60.0 / 60.0, ticks_elapsed);
+        if ticks_elapsed > 0 {
+            for _ in 0..ticks_elapsed {
+                self.advance_tick();
 
-        for _ in 0..ticks_elapsed {
-            self.advance_tick();
-
-            if self.is_game_over() {
-                break;
+                if self.is_game_over() {
+                    break;
+                }
             }
-        }
 
-        self.last_updated = now;
+            self.last_updated = now;
+        }
     }
 
     pub fn is_game_over(&self) -> bool {
-        return self.pet.is_dead();
+        self.pet.is_dead()
     }
 
     pub fn format_stats(&self) -> String {
-        return self.pet.format_stats();
+        self.pet.format_stats()
     }
 }
