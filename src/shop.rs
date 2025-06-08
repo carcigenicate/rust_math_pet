@@ -28,12 +28,12 @@ impl ShopItem {
 
 pub fn get_shop_inventory() -> Vec<ShopItem> {
     return vec![
-        ShopItem::new("Heal", 50.0, |s| s.pet.heal(10.0)),
+        ShopItem::new("Heal", 50.0, |s| s.pet.heal(20.0)),
         ShopItem::new("Increase Max HP", 10.0, |s| s.pet.health_max += 2.0),
         ShopItem::new("Increase Max SAT", 10.0, |s| s.pet.satiation_max += 2.0),
-        ShopItem::new("Increase Time to Starve", 10.0, |s| s.tweaks.starve_per_tick *= 0.95),
+        ShopItem::new("Increase Time to Starve", 10.0, |s| s.tweaks.starve_per_tick *= 0.995),
         ShopItem::new("Increase Risk", 30.0, |s| {
-            s.tweaks.food_per_correct += 0.25;
+            s.tweaks.food_per_correct += 0.2;
             s.tweaks.damage_per_wrong += 0.5;
         }),
     ];

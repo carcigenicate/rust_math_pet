@@ -57,7 +57,7 @@ impl HistoryState {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct LiveGameState {
     pub pet: Pet,
     pub tweaks: GameTweaks,
@@ -75,10 +75,10 @@ impl LiveGameState {
     pub fn new_default_state() -> Self {
         let starting_health = 100.0;
         let starting_satiation = 100.0;
-        let pet = Pet::new(starting_health, starting_health, starting_satiation, starting_satiation);
+        let pet = Pet::new(starting_health, starting_health, starting_satiation, starting_satiation * 2.0);
 
         let seconds_per_day = 86400f64;
-        let seconds_per_tick = 0.5;
+        let seconds_per_tick = 1.0;
         let ticks_per_day: f64 = seconds_per_day / seconds_per_tick;
 
         let tweaks = GameTweaks {
@@ -87,9 +87,9 @@ impl LiveGameState {
 
             ms_per_tick: (seconds_per_tick * 1000.0) as u32,
 
-            damage_per_starved_tick: starting_health / (ticks_per_day * 2.0),
-            starve_per_tick: starting_satiation / (ticks_per_day * 2.0),
-            heal_per_tick: starting_health / (ticks_per_day / 2.0),
+            damage_per_starved_tick: starting_health / (ticks_per_day / 2.0),
+            starve_per_tick: starting_satiation / (ticks_per_day / 2.0),
+            heal_per_tick: starting_health / (ticks_per_day / 4.0),
         };
 
         let now = time_utils::now();
@@ -102,6 +102,35 @@ impl LiveGameState {
             created: now,
             game_history: vec![]
         }
+    }
+
+    pub fn ticks_to_starving_and_death(&self) -> (u128, u128) {
+        let mut copy_self = self.clone();  // Eww  // FIXME:
+
+        let mut starving = 0;
+        let mut ticks = 0;
+        while !copy_self.pet.is_dead() {
+            copy_self.advance_tick();
+            ticks += 1;
+
+            if starving == 0 && copy_self.pet.is_starving() {
+                starving = ticks;
+            }
+        }
+
+        (starving, ticks)
+    }
+
+    pub fn hours_to_starving_and_death(&self) -> (f64, f64) {
+        let (ticks_until_starving, ticks_until_death) = self.ticks_to_starving_and_death();
+
+        let ms_until_starving = (ticks_until_starving * (self.tweaks.ms_per_tick as u128)) as f64;
+        let ms_until_death = (ticks_until_death * (self.tweaks.ms_per_tick as u128)) as f64;
+
+        (
+            ms_until_starving / 1000.0 / 60.0 / 60.0,
+            ms_until_death / 1000.0 / 60.0 / 60.0,
+        )
     }
 
     pub fn borrow_pet(&mut self) -> &mut Pet {
@@ -125,7 +154,7 @@ impl LiveGameState {
     pub fn heal_pet(&mut self, by: f64) {
         if !self.pet.has_full_health() {
             self.pet.heal(by);
-            self.stats.damage_healed += by;
+            self.stats.damage_healed += by.min(self.pet.health_max - self.pet.health);
         }
     }
 

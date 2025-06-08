@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use eframe;
 use eframe::{egui, CreationContext};
 use eframe::egui::{Align, Event, FontFamily, InputState};
@@ -6,11 +6,11 @@ use egui::{FontId, Layout};
 use crate::game_state::LiveGameState;
 use rand::{thread_rng};
 use rand::rngs::ThreadRng;
-use crate::{save_state};
+use crate::{save_state, time_utils};
 use crate::shop;
 use crate::question_generator::math_question_generator;
 
-const INITIAL_WINDOW_SIZE: (f32, f32) = (640.0, 300.0);
+const INITIAL_WINDOW_SIZE: (f32, f32) = (750.0, 300.0);
 
 pub fn start_gui(game: LiveGameState, rand_gen: ThreadRng) -> eframe::Result {
     let options = eframe::NativeOptions {
@@ -59,6 +59,9 @@ struct UiState {
     current_question_answer: i32,
     question_history: Vec<String>,
     status: String,
+    last_periodic_update: u128,
+    hours_until_starving: f64,
+    hours_until_death: f64,
 }
 
 impl UiState {
@@ -66,6 +69,8 @@ impl UiState {
         let shop_items = shop::get_shop_inventory();
 
         let (question, answer) = math_question_generator::generate(&mut rand_gen);
+
+        let (until_starving, until_death) = game.hours_to_starving_and_death();
 
         Self {
             game,
@@ -76,6 +81,9 @@ impl UiState {
             current_question_answer: answer,
             question_history: Vec::new(),
             status: String::new(),
+            last_periodic_update: time_utils::now(),
+            hours_until_starving: until_starving,
+            hours_until_death: until_death,
         }
     }
 
@@ -122,19 +130,23 @@ impl UiState {
             save_state(&self.game);
         }
     }
-}
 
-fn apply_event(event: &Event, input_state: &InputState) {
-
+    fn trigger_periodic_update(&mut self) {
+        self.last_periodic_update = 0;
+    }
 }
 
 impl eframe::App for UiState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        ctx.input(| i | {
-            for event in &i.events {
-                apply_event(&event, i);
-            }
+        let now = time_utils::now();
+        if now - self.last_periodic_update > 5000 {
+            let (until_starving, until_death) = self.game.hours_to_starving_and_death();
+            self.hours_until_starving = until_starving;
+            self.hours_until_death = until_death;
+            self.last_periodic_update = now;
+        }
 
+        ctx.input(| i | {
             if i.viewport().close_requested() {
                 handle_closing(&mut self.game);
             }
@@ -150,6 +162,9 @@ impl eframe::App for UiState {
             ui.label(format!("Health: {:.1}/{:.1}", self.game.pet.health, self.game.pet.health_max));
             ui.label(format!("Satiation: {:.1}/{:.1}", self.game.pet.satiation, self.game.pet.satiation_max));
 
+            ui.label(format!("Until Starving: {:.1} hrs", self.hours_until_starving));
+            ui.label(format!("Until Death: {:.1} hrs", self.hours_until_death));
+
             ui.with_layout(Layout::bottom_up(Align::Min), |ui| {
                 ui.label(format!("Fed: {:.1}", self.game.stats.amount_fed));
                 ui.label(format!("Damaged: {:.1}", self.game.stats.damage_taken));
@@ -160,6 +175,7 @@ impl eframe::App for UiState {
         });
 
         egui::SidePanel::right("shop_panel").show(ctx, |ui| {
+            let mut trigger_update = false;
             for item in &self.shop_items {
                 ui.horizontal(|ui| {
                     let btn = ui.button("Buy");
@@ -167,20 +183,26 @@ impl eframe::App for UiState {
 
                     if btn.clicked() {
                         item.buy_and_apply(&mut self.game);
+                        trigger_update = true;
                     }
                 });
+            }
+
+            if trigger_update {
+                self.trigger_periodic_update();
             }
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                 ui.horizontal(|ui| {
-                    let label = ui.label(format!("{} = ", self.current_question));
+                    ui.label(format!("{} = ", self.current_question));
                     let text_edit = ui.text_edit_singleline(&mut self.math_input_text_buffer);
 
                     if text_edit.lost_focus() && text_edit.ctx.input(|i| i.key_pressed(egui::Key::Enter)) {
                         self.evaluate_question();
                         text_edit.request_focus();
+                        self.trigger_periodic_update();
                     }
                 });
 
