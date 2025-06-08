@@ -1,7 +1,7 @@
 use std::cmp::{max, min};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Pet {
     pub health: f64,
     pub health_max: f64,
@@ -39,7 +39,7 @@ impl Pet {
     }
 
     pub fn has_full_health(&self) -> bool {
-        return self.satiation == self.satiation_max;
+        return self.satiation >= self.satiation_max;
     }
 
     pub fn is_dead(&self) -> bool {
@@ -47,11 +47,11 @@ impl Pet {
     }
 
     pub fn is_full(&self) -> bool {
-        return self.satiation == self.satiation_max;
+        return self.satiation >= self.satiation_max;
     }
 
     pub fn is_starving(&self) -> bool {
-        return self.satiation == 0.0;
+        return self.satiation <= 0.0;
     }
 
     pub fn format_stats(&self) -> String {

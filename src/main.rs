@@ -8,7 +8,7 @@
 //  - Shop
 
 use rand::thread_rng;
-use crate::game_state::{GameTweaks, LiveGameState};
+use crate::game_state::{GameStats, GameTweaks, LiveGameState};
 use crate::pet::Pet;
 
 mod game_state;
@@ -36,40 +36,10 @@ fn save_state(game_state: &LiveGameState) -> () {
     }
 }
 
-fn new_default_state() -> LiveGameState {
-    let starting_health = 100.0;
-    let starting_satiation = 100.0;
-    let pet = Pet::new(starting_health, starting_health, starting_satiation, starting_satiation);
-
-    let seconds_per_day = 86400f64;
-    let seconds_per_tick = 0.5;
-    let ticks_per_day: f64 = seconds_per_day / seconds_per_tick;
-
-    let tweaks = GameTweaks {
-        food_per_correct: 2.5,
-        damage_per_wrong: 5.0,
-
-        ms_per_tick: (seconds_per_tick * 1000.0) as u32,
-
-        damage_per_starved_tick: starting_health / (ticks_per_day * 2.0),
-        starve_per_tick: starting_satiation / (ticks_per_day * 2.0),
-        heal_per_tick: starting_health / (ticks_per_day / 2.0),
-    };
-
-    let now = time_utils::now();
-
-    return LiveGameState {
-        pet: pet,
-        tweaks: tweaks,
-        last_updated: now,
-        created: now,
-    };
-}
-
 // 1704006000000
 
 fn main() {
-    let game_state = load_state().unwrap_or_else(new_default_state);
+    let game_state = load_state().unwrap_or_else(LiveGameState::new_default_state);
     let random_gen = thread_rng();
 
     ui::egui::egui_ui::start_gui(game_state, random_gen);

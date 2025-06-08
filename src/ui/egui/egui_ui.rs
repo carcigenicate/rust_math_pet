@@ -6,7 +6,7 @@ use egui::{FontId, Layout};
 use crate::game_state::LiveGameState;
 use rand::{thread_rng};
 use rand::rngs::ThreadRng;
-use crate::{new_default_state, save_state};
+use crate::{save_state};
 use crate::shop;
 use crate::question_generator::math_question_generator;
 
@@ -83,11 +83,13 @@ impl UiState {
         match self.math_input_text_buffer.parse::<i32>() {
             Ok(user_answer) => {
                 let status = if user_answer == self.current_question_answer {
-                    self.game.pet.feed(self.game.tweaks.food_per_correct);
+                    self.game.feed_pet();
+                    self.game.record_question(true);
                     self.set_status("Correct");
                     String::from("Correct")
                 } else {
-                    self.game.pet.hurt(self.game.tweaks.damage_per_wrong);
+                    self.game.damage_pet(self.game.tweaks.damage_per_wrong);
+                    self.game.record_question(false);
                     self.set_status("Incorrect");
                     format!("Wrong ({})", self.current_question_answer)
                 };
@@ -101,7 +103,9 @@ impl UiState {
 
                 self.question_history.push(history_str);
             },
-            _ => {}
+            Err(err) => {
+                self.set_status("Invalid answer");
+            }
         }
 
     }
@@ -114,7 +118,7 @@ impl UiState {
         if self.game.is_game_over() {
             self.set_status("Your Pet Died. Resetting...");
 
-            self.game = new_default_state();
+            self.game.record_and_reset();
             save_state(&self.game);
         }
     }
@@ -145,6 +149,14 @@ impl eframe::App for UiState {
         egui::SidePanel::left("stats_panel").show(ctx, |ui| {
             ui.label(format!("Health: {:.1}/{:.1}", self.game.pet.health, self.game.pet.health_max));
             ui.label(format!("Satiation: {:.1}/{:.1}", self.game.pet.satiation, self.game.pet.satiation_max));
+
+            ui.with_layout(Layout::bottom_up(Align::Min), |ui| {
+                ui.label(format!("Fed: {:.1}", self.game.stats.amount_fed));
+                ui.label(format!("Damaged: {:.1}", self.game.stats.damage_taken));
+                ui.label(format!("Healed: {:.1}", self.game.stats.damage_healed));
+                ui.label(format!("Incorrect: {}", self.game.stats.answered_incorrect));
+                ui.label(format!("Correct: {}", self.game.stats.answered_correct));
+            });
         });
 
         egui::SidePanel::right("shop_panel").show(ctx, |ui| {
