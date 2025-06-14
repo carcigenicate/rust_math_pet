@@ -62,6 +62,7 @@ struct UiState {
     last_periodic_update: u128,
     hours_until_starving: f64,
     hours_until_death: f64,
+    days_alive_for: f64,
 }
 
 impl UiState {
@@ -70,9 +71,7 @@ impl UiState {
 
         let (question, answer) = math_question_generator::generate(&mut rand_gen);
 
-        let (until_starving, until_death) = game.hours_to_starving_and_death();
-
-        Self {
+        let mut instance = Self {
             game,
             rand_gen,
             math_input_text_buffer: String::new(),
@@ -81,10 +80,15 @@ impl UiState {
             current_question_answer: answer,
             question_history: Vec::new(),
             status: String::new(),
-            last_periodic_update: time_utils::now(),
-            hours_until_starving: until_starving,
-            hours_until_death: until_death,
-        }
+            last_periodic_update: time_utils::now_as_milli(),
+            hours_until_starving: 0.0,
+            hours_until_death: 0.0,
+            days_alive_for: 0.0,
+        };
+
+        instance.update_time_estimations();
+
+        instance
     }
 
     fn evaluate_question(&mut self) {
@@ -131,6 +135,17 @@ impl UiState {
         }
     }
 
+    fn update_time_estimations(&mut self) {
+        let now = time_utils::now_as_milli();
+
+        let (until_starving, until_death) = self.game.hours_to_starving_and_death();
+        self.hours_until_starving = until_starving;
+        self.hours_until_death = until_death;
+        self.last_periodic_update = now;
+
+        self.days_alive_for = time_utils::calc_days_since(self.game.created);
+    }
+
     fn trigger_periodic_update(&mut self) {
         self.last_periodic_update = 0;
     }
@@ -138,12 +153,9 @@ impl UiState {
 
 impl eframe::App for UiState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let now = time_utils::now();
+        let now = time_utils::now_as_milli();
         if now - self.last_periodic_update > 5000 {
-            let (until_starving, until_death) = self.game.hours_to_starving_and_death();
-            self.hours_until_starving = until_starving;
-            self.hours_until_death = until_death;
-            self.last_periodic_update = now;
+            self.update_time_estimations();
         }
 
         ctx.input(| i | {
@@ -154,13 +166,18 @@ impl eframe::App for UiState {
 
         egui::TopBottomPanel::top("status_panel").show(ctx, |ui| {
             ui.with_layout(Layout::top_down(Align::Center), |ui| {
-                ui.label(self.status.clone());
+                ui.columns(3, |uis| {
+                    let days_alive_for = format!("Days Alive For: {:.1}", self.days_alive_for);
+                    uis[0].with_layout(Layout::left_to_right(Align::Min), |ui | ui.label(days_alive_for));
+                    uis[1].centered_and_justified(|ui | ui.label(self.status.clone()));
+                });
+
             });
         });
 
         egui::SidePanel::left("stats_panel").show(ctx, |ui| {
-            ui.label(format!("Health: {:.1}/{:.1}", self.game.pet.health, self.game.pet.health_max));
-            ui.label(format!("Satiation: {:.1}/{:.1}", self.game.pet.satiation, self.game.pet.satiation_max));
+            ui.label(format!("HP: {:.1}/{:.1}", self.game.pet.health, self.game.pet.health_max));
+            ui.label(format!("SAT: {:.1}/{:.1}", self.game.pet.satiation, self.game.pet.satiation_max));
 
             ui.label(format!("Until Starving: {:.1} hrs", self.hours_until_starving));
             ui.label(format!("Until Death: {:.1} hrs", self.hours_until_death));

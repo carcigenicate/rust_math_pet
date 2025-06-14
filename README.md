@@ -2,11 +2,24 @@
 
 ![Sample](./docs/math_pet.png)
 
-This is a Tamagotchi-like game. To feed the pet, you must answer simple math problems.
+# Gameplay
 
-The game runs in real time, so the pet needs to be fed periodically. After 24 without being fed, the pet will die. Upgrades can be bought that increase this timeframe.
+This is a Tamagotchi-like game. To feed the pet, you must answer simple math problems. Correct answers result in the pet being fed, while wrong answers result in the pet losing HP.
 
-The game auto-saves on close, and creates a `pet_save.json` save-file.
+The pet will slowly become hungry over time. When its SAT reaches 0, it will begin losing health. If the pet's health reaches 0, it will die, and the game will reset. The old game save is stored internally within the file, but isn't currently used for anything. I think I may add a "resurrection" mechanic at some point.
+
+The game auto-saves on close.
+
+## Shop
+
+SAT can be "spent" in order to tweak some aspects of the game and affect the pet.
+
+- Heal: Heal the pet for 20 HP
+- Increase Max SAT: Increase the max SAT of the pet by 2
+- Increase Max HP: Increase the max HP of the pet by 2
+- Increase Time to Starve: Reduce how quickly the pet loses SAT
+- Increase Risk: Increase the amount of SAT recovered for correct answers by 0.2, but increase the amount of health lost for wrong answers by 0.5.
+
 
 # Running
 

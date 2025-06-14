@@ -52,7 +52,7 @@ impl HistoryState {
             created: alive_state.created,
             stats: alive_state.stats.clone(),
             tweaks: alive_state.tweaks.clone(),
-            ended: time_utils::now(),
+            ended: time_utils::now_as_milli(),
         }
     }
 }
@@ -92,7 +92,7 @@ impl LiveGameState {
             heal_per_tick: starting_health / (ticks_per_day / 4.0),
         };
 
-        let now = time_utils::now();
+        let now = time_utils::now_as_milli();
 
         Self {
             pet: pet,
@@ -177,7 +177,7 @@ impl LiveGameState {
     }
 
     pub fn account_for_elapsed_time(&mut self) {
-        let now = time_utils::now();
+        let now = time_utils::now_as_milli();
         let ms_elapsed = now - self.last_updated;
         let ticks_elapsed = ms_elapsed / self.tweaks.ms_per_tick as u128;
 
