@@ -93,16 +93,18 @@ fn menu_dispatch(game_state: &mut LiveGameState, random_gen: &mut ThreadRng) -> 
 }
 
 pub fn main_loop(game_state: &mut LiveGameState, random_gen: &mut ThreadRng) {
+    game_state.account_for_elapsed_time();
+
     loop {
         if game_state.is_game_over() {
             break;
         }
 
+        let keep_playing = menu_dispatch(game_state, random_gen);
         game_state.account_for_elapsed_time();
 
-        let keep_playing = menu_dispatch(game_state, random_gen);
-
         if keep_playing == false {
+            game_state.save_state();
             break;
         }
     }

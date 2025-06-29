@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use crate::pet::Pet;
 use crate::time_utils;
 
+const SAVE_PATH: &str = "./pet_save.json";
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GameTweaks {
     pub food_per_correct: f64,
@@ -101,6 +103,21 @@ impl LiveGameState {
             last_updated: now,
             created: now,
             game_history: vec![]
+        }
+    }
+
+    pub fn load_state() -> Option<LiveGameState> {
+        std::fs::read_to_string(SAVE_PATH).map_or(None, |deserialized| {
+            return serde_json::from_str(deserialized.as_str()).unwrap_or(None);
+        })
+    }
+
+    pub fn save_state(&self) -> () {
+        match serde_json::to_string(self) {
+            Ok(serialized) => std::fs::write(SAVE_PATH, serialized).expect("Writing save file"),
+            Err(err) => {
+                eprintln!("Serialization failed with error {err}");
+            },
         }
     }
 

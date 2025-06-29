@@ -6,7 +6,7 @@ use egui::{FontId, Layout};
 use crate::game_state::LiveGameState;
 use rand::{thread_rng};
 use rand::rngs::ThreadRng;
-use crate::{save_state, time_utils};
+use crate::{time_utils};
 use crate::shop;
 use crate::question_generator::math_question_generator;
 
@@ -39,15 +39,8 @@ pub fn start_gui(game: LiveGameState, rand_gen: ThreadRng) -> eframe::Result {
 }
 
 fn handle_closing(game_state: &mut LiveGameState) {
-    // if game_state.is_game_over() {
-    //     println!("Your pet died! Restarting...");
-    //     game_state = new_default_state()
-    // } else {
-    //
-    // }
-
     game_state.account_for_elapsed_time();
-    save_state(&game_state);
+    game_state.save_state();
     println!("Saved...");
 }
 
@@ -126,12 +119,17 @@ impl UiState {
         self.status = status.into();
     }
 
+    fn save_game(&mut self) {
+        self.game.save_state();
+        self.set_status("Saved");
+    }
+
     fn check_for_and_handle_death(&mut self) {
         if self.game.is_game_over() {
             self.set_status("Your Pet Died. Resetting...");
 
             self.game.record_and_reset();
-            save_state(&self.game);
+            self.game.save_state();
         }
     }
 
@@ -170,6 +168,12 @@ impl eframe::App for UiState {
                     let days_alive_for = format!("Days Alive For: {:.1}", self.days_alive_for);
                     uis[0].with_layout(Layout::left_to_right(Align::Min), |ui | ui.label(days_alive_for));
                     uis[1].centered_and_justified(|ui | ui.label(self.status.clone()));
+                    uis[2].with_layout(Layout::right_to_left(Align::Max), |ui | {
+                        let save_button = ui.button("Save");
+                        if save_button.clicked() {
+                            self.save_game();
+                        }
+                    });
                 });
 
             });
