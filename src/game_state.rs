@@ -133,10 +133,6 @@ impl LiveGameState {
         )
     }
 
-    pub fn borrow_pet(&mut self) -> &mut Pet {
-        &mut self.pet
-    }
-
     pub fn damage_pet(&mut self, by: f64) {
         if !self.pet.is_dead() {
             self.pet.hurt(by);
@@ -158,6 +154,20 @@ impl LiveGameState {
         }
     }
 
+    pub fn answered_correctly(&mut self) {
+        self.feed_pet();
+
+        self.stats.answered_correct += 1;
+        self.pet.give_experience(1.0);
+    }
+
+    pub fn answered_incorrectly(&mut self) {
+        self.damage_pet(self.tweaks.damage_per_wrong);
+
+        self.stats.answered_incorrect += 1;
+        self.pet.remove_experience(1.0);
+    }
+
     pub fn advance_tick(&mut self) {
         self.pet.starve(self.tweaks.starve_per_tick);
 
@@ -165,14 +175,6 @@ impl LiveGameState {
             self.damage_pet(self.tweaks.damage_per_starved_tick);
         } else {
             self.heal_pet(self.tweaks.heal_per_tick);
-        }
-    }
-
-    pub fn record_question(&mut self, answered_correct: bool) {
-        if answered_correct {
-            self.stats.answered_correct += 1;
-        } else {
-            self.stats.answered_incorrect += 1;
         }
     }
 

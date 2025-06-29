@@ -12,6 +12,10 @@ use crate::question_generator::math_question_generator;
 
 const INITIAL_WINDOW_SIZE: (f32, f32) = (750.0, 300.0);
 
+// TODO:
+//  Give experience for things like correct-answer streaks.
+//    - Will need to record streak info in the save file. Does that require a new struct?
+
 pub fn start_gui(game: LiveGameState, rand_gen: ThreadRng) -> eframe::Result {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default().with_inner_size([INITIAL_WINDOW_SIZE.0 as f32, INITIAL_WINDOW_SIZE.1 as f32]),
@@ -94,13 +98,11 @@ impl UiState {
         match self.math_input_text_buffer.parse::<i32>() {
             Ok(user_answer) => {
                 let status = if user_answer == self.current_question_answer {
-                    self.game.feed_pet();
-                    self.game.record_question(true);
+                    self.game.answered_correctly();
                     self.set_status("Correct");
                     String::from("Correct")
                 } else {
-                    self.game.damage_pet(self.game.tweaks.damage_per_wrong);
-                    self.game.record_question(false);
+                    self.game.answered_incorrectly();
                     self.set_status("Incorrect");
                     format!("Wrong ({})", self.current_question_answer)
                 };
@@ -118,7 +120,6 @@ impl UiState {
                 self.set_status("Invalid answer");
             }
         }
-
     }
 
     fn set_status<S: Into<String>>(&mut self, status: S) {
@@ -187,6 +188,8 @@ impl eframe::App for UiState {
                 ui.label(format!("Healed: {:.1}", self.game.stats.damage_healed));
                 ui.label(format!("Incorrect: {}", self.game.stats.answered_incorrect));
                 ui.label(format!("Correct: {}", self.game.stats.answered_correct));
+                ui.label(format!("Experience: {:.1}/{:.1}", self.game.pet.experience, self.game.pet.next_level_at));
+                ui.label(format!("Level: {}", self.game.pet.level));
             });
         });
 
