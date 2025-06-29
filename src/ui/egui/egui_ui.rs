@@ -29,7 +29,6 @@ pub fn start_gui(game: LiveGameState, rand_gen: ThreadRng) -> eframe::Result {
             style.override_font_id = Some(font_id);
             cc.egui_ctx.set_style(style);
 
-            egui_extras::install_image_loaders(&cc.egui_ctx);
             return Ok(Box::<UiState>::new(state));
         }),
     )
