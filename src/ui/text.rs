@@ -1,1 +1,1 @@
-mod text_ui;
+pub mod text_ui;
